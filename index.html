@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>KWTI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'theme-primary': '#3b82f6',
+              'theme-primary-light': '#60a5fa',
+              'theme-primary-dark': '#2563eb',
+              'theme-secondary': '#f3f4f6',
+              'theme-text': '#1f2937',
+              'theme-text-light': '#6b7280',
+              'theme-border': '#e5e7eb',
+            },
+            fontFamily: {
+              sans: ['Inter', 'system-ui', 'sans-serif'],
+            },
+          },
+        }
+      }
+    </script>
+    <style type="text/tailwindcss">
+      @layer utilities {
+        .text-shadow {
+          text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .bg-gradient {
+          background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+        }
+        .bg-gradient-light {
+          background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+        }
+      }
+    </style>
+  </head>
+  <body class="bg-gradient-light min-h-screen font-sans text-theme-text">
+    <div id="app" class="max-w-4xl mx-auto p-4">
+      <!-- 英雄区 -->
+      <section id="intro" class="active min-h-[80vh] flex flex-col justify-center items-center text-center">
+        <div class="hero bg-white/90 rounded-2xl p-8 shadow-lg max-w-2xl w-full bg-cover" style="background-image: url('image/shouye.jpg'); background-position: center 45%;">
+          <div class="pt-16">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4" style="-webkit-text-stroke: 1px white; color: transparent;">KWTI人格测试</h1>
+            <p class="text-xl text-white mb-8 text-center font-medium" style="text-shadow: 0 1px 3px rgba(0,0,0,0.5);">冬柚降临，19道测试题决定你的cpf人格</p>
+          </div>
+          <button id="startBtn" class="bg-gradient text-white px-8 py-3 rounded-full text-lg font-medium hover:opacity-90 transition-opacity">
+            开始测试
+          </button>
+        </div>
+      </section>
+
+      <!-- 测试区 -->
+      <section id="test" class="hidden">
+        <div class="mini-panel bg-white rounded-xl p-4 mb-6 shadow">
+          <div class="flex justify-between items-center mb-2">
+            <h2 class="text-lg font-semibold">测试进行中</h2>
+            <span id="progressText" class="text-sm text-theme-text-light">0 / 19</span>
+          </div>
+          <div class="w-full bg-theme-secondary rounded-full h-2.5">
+            <div id="progressBar" class="bg-gradient h-2.5 rounded-full" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <div id="questionList" class="space-y-6"></div>
+
+        <div class="mt-8 flex flex-col items-center">
+          <p id="testHint" class="text-sm text-theme-text-light mb-4">
+            全选完才会放行。世界已经够乱了，起码把题做完整。
+          </p>
+          <button id="submitBtn" class="bg-gradient text-white px-8 py-3 rounded-full text-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+            提交答案
+          </button>
+        </div>
+      </section>
+
+      <!-- 结果区 -->
+      <section id="result" class="hidden">
+        <div class="mini-panel bg-white rounded-xl p-4 mb-6 shadow">
+          <div class="flex justify-between items-center">
+            <h2 class="text-lg font-semibold">测试结果</h2>
+            <button id="backIntroBtn" class="text-sm text-theme-primary hover:underline">返回首页</button>
+          </div>
+        </div>
+
+        <div class="poster-box bg-white rounded-2xl p-6 shadow-lg mb-6" id="posterBox">
+          <div class="flex flex-col md:flex-row gap-6">
+            <div class="w-full md:w-1/2 flex justify-center items-start md:items-center">
+              <div id="posterImage" class="w-48 h-48 md:w-64 md:h-64 bg-theme-secondary rounded-full flex items-center justify-center relative overflow-hidden">
+                <span class="text-4xl">🎉</span>
+              </div>
+            </div>
+            <div class="w-full md:w-1/2">
+              <div class="mb-2">
+                <span id="resultModeKicker" class="text-sm font-medium text-theme-primary">你的CP粉类型</span>
+              </div>
+              <h3 id="resultTypeName" class="text-2xl font-bold mb-2"></h3>
+              <div class="mb-4">
+                <span id="matchBadge" class="inline-block bg-theme-secondary text-theme-text-light text-xs px-3 py-1 rounded-full"></span>
+                <span id="resultTypeSub" class="text-sm text-theme-text-light ml-2"></span>
+              </div>
+              <p id="resultDesc" class="text-theme-text-light mb-4 whitespace-pre-line"></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 shadow-lg mb-6">
+          <h3 class="text-lg font-semibold mb-4">维度分析</h3>
+          <div id="dimList" class="space-y-4"></div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 shadow-lg mb-6">
+          <p id="funNote" class="text-sm text-theme-text-light text-center"></p>
+        </div>
+
+        <div class="flex justify-center space-x-4">
+          <button id="restartBtn" class="bg-gradient text-white px-6 py-2 rounded-full text-base font-medium hover:opacity-90 transition-opacity">
+            重新测试
+          </button>
+          <button id="toTopBtn" class="border border-theme-primary text-theme-primary px-6 py-2 rounded-full text-base font-medium hover:bg-theme-secondary transition-colors">
+            返回首页
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      // 维度元数据
+      const dimensionMeta = {
+        K1: { name: 'KW1 急迫度', model: 'CP粉行为模型' },
+        K2: { name: 'KW2 占有欲', model: 'CP粉行为模型' },
+        K3: { name: 'KW3 保护欲', model: 'CP粉行为模型' },
+        K4: { name: 'KW4 治愈力', model: 'CP粉行为模型' },
+        K5: { name: 'KW5 忠诚度', model: 'CP粉行为模型' },
+        K6: { name: 'KW6 观察力', model: 'CP粉行为模型' },
+        K7: { name: 'KW7 甜度感知', model: 'CP粉行为模型' },
+        K8: { name: 'KW8 创造力', model: 'CP粉行为模型' },
+        K9: { name: 'KW9 淡定度', model: 'CP粉行为模型' }
+      };
+
+      // 测试问题
+      const questions = [
+        {
+          id: 'q1', dim: 'K1',
+          text: '周末计划被朋友临时取消，你的第一反应是：',
+          options: [
+            { label: '原地爆炸，疯狂发消息吐槽', value: 4 },
+            { label: '有点失落但理解，默默调整计划', value: 2 },
+            { label: '无所谓，正好有时间做自己的事', value: 1 },
+            { label: '立即联系其他朋友，绝不允许周末浪费', value: 3 }
+          ]
+        },
+        {
+          id: 'q2', dim: 'K9',
+          text: '群聊里大家聊得热火朝天，你通常：',
+          options: [
+            { label: '积极参与，疯狂输出表情包', value: 3 },
+            { label: '偶尔插一两句，主要看大家聊', value: 2 },
+            { label: '潜水观察，默默吃瓜', value: 1 },
+            { label: '看心情，有时带头有时消失', value: 4 }
+          ]
+        },
+        {
+          id: 'q3', dim: 'K4',
+          text: '朋友向你倾诉烦恼，你更倾向于：',
+          options: [
+            { label: '感同身受，陪TA一起骂', value: 4 },
+            { label: '冷静分析，给出建议', value: 2 },
+            { label: '默默倾听，递纸巾', value: 3 },
+            { label: '转移话题，带TA去做开心的事', value: 1 }
+          ]
+        },
+        {
+          id: 'q4', dim: 'K1',
+          text: '刷到一部剧的解说，你觉得很对胃口，你会：',
+          options: [
+            { label: '立刻去搜原片，当晚就开始追', value: 4 },
+            { label: '收藏解说视频，原片等有空再说（有空可能永远不会来）', value: 2 },
+            { label: '把解说链接甩进朋友群："这个好看！"', value: 3 },
+            { label: '看完解说等于看过剧了，下一个', value: 1 }
+          ]
+        },
+        {
+          id: 'q5', dim: 'K6',
+          text: '朋友在群里分享了一个八卦，但只说了开头就消失了。你会：',
+          options: [
+            { label: '自己顺着线索去各平台搜后续', value: 4 },
+            { label: '在群里艾特她："人呢？？说完啊！！"', value: 3 },
+            { label: '心里痒但懒得问，等她自己回来讲', value: 2 },
+            { label: '无所谓，忘了就忘了', value: 1 }
+          ]
+        },
+        {
+          id: 'q6', dim: 'K7',
+          text: '你发现自己最喜欢的歌被设成了闹铃。一个月后你会：',
+          options: [
+            { label: '一听到前奏就心跳加速想摔手机', value: 4 },
+            { label: '依然喜欢这首歌，闹铃是闹铃，歌是歌', value: 3 },
+            { label: '已经把闹铃换了，因为不想恨这首歌', value: 2 },
+            { label: '从来不用喜欢的歌当闹铃，早有防备', value: 1 }
+          ]
+        },
+        {
+          id: 'q7', dim: 'K5',
+          text: '深夜你突然想翻看一下自己几年前的社交动态。你的感受是：',
+          options: [
+            { label: '脚趾抠地，边抠边删', value: 1 },
+            { label: '觉得当年的自己还挺可爱的', value: 3 },
+            { label: '内心毫无波澜，甚至想给自己点个赞', value: 2 },
+            { label: '从来不翻，过去就过去了', value: 4 }
+          ]
+        },
+        {
+          id: 'q8', dim: 'K9',
+          text: '朋友说"我有个秘密告诉你，你别跟别人说"。你的第一反应是：',
+          options: [
+            { label: '耳朵已经竖起来了，快说', value: 4 },
+            { label: '"你先说，我再决定能不能保守"', value: 2 },
+            { label: '听完之后憋得难受，最后告诉了另一个朋友（并叮嘱"别跟别人说"）', value: 3 },
+            { label: '听完放心里，真的能保守秘密', value: 1 }
+          ]
+        },
+        {
+          id: 'q9', dim: 'K8',
+          text: '如果给你一整天完全自由的时间，没有任何人打扰，你会：',
+          options: [
+            { label: '追剧/看文/打游戏，把想看的全刷一遍', value: 3 },
+            { label: '睡觉，睡到自然醒再说', value: 1 },
+            { label: '做点平时没时间做的事（整理房间、学个东西、出门逛逛）', value: 2 },
+            { label: '躺床上刷手机，在几个APP之间反复横跳，一天就过去了', value: 4 }
+          ]
+        },
+        {
+          id: 'q10', dim: 'K1',
+          text: '看到冬柚同框但互动不多时，你会：',
+          options: [
+            { label: '急得跺脚："你们怎么不说话！快互动啊！"', value: 4 },
+            { label: '仔细分析细节："刚才那个眼神！是爱的信号！"', value: 3 },
+            { label: '满足于同框："能看到就很开心啦～"', value: 2 },
+            { label: '脑补小剧场："私下聊美了现在又装不熟"', value: 1 }
+          ]
+        },
+        {
+          id: 'q11', dim: 'K2',
+          text: '看到有人说"冬柚工业糖"，你会：',
+          options: [
+            { label: '直接反驳："主页破案"', value: 4 },
+            { label: '理性分析："每个人感受不同啦"', value: 2 },
+            { label: '懒得理会，专注自己的快乐', value: 1 },
+            { label: '表面淡定，默默把那人拉黑', value: 3 }
+          ]
+        },
+        {
+          id: 'q12', dim: 'K7',
+          text: '看到"世纪拥抱"你的反应是：',
+          options: [
+            { label: '卧槽？！', value: 4 },
+            { label: '此生圆满，感恩所有', value: 3 },
+            { label: '好嗑到旁边人亖了都不知道（可能就是你拍亖的）', value: 2 },
+            { label: '啊啊啊啊啊啊啊啊啊啊啊啊啊', value: 1 }
+          ]
+        },
+        {
+          id: 'q13', dim: 'K9',
+          text: '冬柚没发糖的日子，你会：',
+          options: [
+            { label: '考古旧糖，翻出物料反复看', value: 3 },
+            { label: '自己产粮或狂刷首页等太太喂饭', value: 2 },
+            { label: '专注各自单人，支持事业', value: 1 },
+            { label: '躺平等糖，不急不躁', value: 4 }
+          ]
+        },
+        {
+          id: 'q14', dim: 'K5',
+          text: '对于冬柚的未来，你相信：',
+          options: [
+            { label: '她们一定会一直在一起！', value: 4 },
+            { label: '无论结果如何，珍惜当下', value: 3 },
+            { label: '期待但不强求，顺其自然', value: 2 },
+            { label: '嗑一天是一天，快乐最重要', value: 1 }
+          ]
+        },
+        {
+          id: 'q15', dim: 'K1',
+          text: '朋友约你周末出门，但那天刚好有冬柚的双人直播。你会：',
+          options: [
+            { label: '"不好意思突然发烧了🤒"（体温正常，良心微微发热）', value: 4 },
+            { label: '出门，但手机开着直播放口袋里，主打一个陪伴式收听', value: 3 },
+            { label: '出门，直播回放又不是不会传', value: 2 },
+            { label: '看情况，权衡这次出门和直播', value: 1 }
+          ]
+        },
+        {
+          id: 'q16', dim: 'K2',
+          text: '你看到一个陌生人正在广场上骂冬柚。你的手指会：',
+          options: [
+            { label: '已经点进主页查成分了', value: 4 },
+            { label: '截图配文"来看傻子"', value: 3 },
+            { label: '划过去，不给眼神就是最大的尊重', value: 1 },
+            { label: '内心：骂呗，骂完她俩今晚就双人直播气死你', value: 2 }
+          ]
+        },
+        {
+          id: 'q17', dim: 'K3',
+          text: '群聊里同担因为冬柚的一颗糖发了99+消息，你的参与方式是：',
+          options: [
+            { label: '每条都引用回复，输出量占30%', value: 4 },
+            { label: '跟着嚎了五十条，第二天嗓子哑了', value: 3 },
+            { label: '爬完所有消息，发一个"已阅"', value: 2 },
+            { label: '第二天才看到，默默补课，不发言', value: 1 }
+          ]
+        },
+        {
+          id: 'q18', dim: 'K6',
+          text: '冬柚穿了一件你从没见过的同款不同色的衣服。你首先会：',
+          options: [
+            { label: '打开淘宝识图，同时搜索两人近半年所有机场图', value: 4 },
+            { label: '脑中已生成"同居实锤"完整时间线', value: 3 },
+            { label: '截图，标记，存入"情侣款"文件夹归档', value: 2 },
+            { label: '看一眼，嗯，好嗑，划走', value: 1 }
+          ]
+        },
+        {
+          id: 'q19', dim: 'K3',
+          text: '冬柚连续一周没有互动，首页开始出现哀嚎。你的状态是：',
+          options: [
+            { label: '我也在哀嚎，嚎得最大声', value: 4 },
+            { label: '翻出旧糖反复品味，假装是新的', value: 3 },
+            { label: '趁机补档，看之前没看完的物料', value: 2 },
+            { label: '没注意到，因为这一周我也在忙', value: 1 }
+          ]
+        }
+      ];
+
+      // 结果类型库
+      const TYPE_LIBRARY = {
+        "恨生米煮不成熟饭型": {
+          "code": "HATE",
+          "cn": "恨生米煮不成熟饭型 👿",
+          "intro": "呃啊啊啊你们怎么还不做——！！！",
+          "desc": "\"呃啊啊啊你们怎么还不做——！！！\"（此处为超声波攻击，屏幕已碎）\n说真的你们这张脸这副身体不做一次也太不像话了吧！\n之所以要长大到18岁不就是为了看你们做吗！总不能是为了上班吧！"
+        },
+        "按头型": {
+          "code": "PRESS",
+          "cn": "按头型 😡",
+          "intro": "呃啊啊啊你们怎么还不麦——！！！",
+          "desc": "\"呃啊啊啊你们怎么还不麦——！！！\"\n你们人呢？寻猫启示寻狗启示。\"喂？是孤儿院吗？我这个年纪还能进吗？\"\n你们签禁止麦麸协议了吗？又不认识了？快牵手啊 快发合照啊 对视了就接吻啊 好想把手伸进屏幕里按头 怎么忍住的 你已急哭"
+        },
+        "强制爱型": {
+          "code": "FORCED",
+          "cn": "强制爱型⛓️",
+          "intro": "不要再跟其他人麦了！",
+          "desc": "\"不要再跟其他人麦了！\"在你眼里队内拆家是眼中钉肉中刺，队外拆家更是两眼一黑。\n你最想做的是清除家产身边的妖魔鬼怪，用红线把两个人绑在一起永不分离。\n你要创造一个只有美帝和美帝姐的世界。"
+        },
+        "妈妈": {
+          "code": "MAMA",
+          "cn": "妈妈👩‍👧🏻‍👧🏼",
+          "intro": "你家有两个孩子",
+          "desc": "\"刘志民叽米蒸就是我生的！\"提起你们的长大……后面忘了。\n果然养娃很花钱呢……宝宝们能给妈妈刷下卡吗？\n她们刚出道的样子还历历在目，孩子们长大了，偶尔也会担心：怎么又熬夜了？这么穿是不是太薄了？最近是不是又瘦了？不过好在她们身边有彼此照顾着。"
+        },
+        "保育员": {
+          "code": "NURSE",
+          "cn": "保育员🍼",
+          "intro": "你是同担的妈妈",
+          "desc": "你是同担的妈妈。在主页一片哀嚎时，你总是能够镇定自若（其实是并不知道发生什么事了），精准接住同担的眼泪，并递上1399ml的奶瓶拍拍背，\"乖，你们不要再哭了。\"\n哭得厉害的时候，你会翻开名为\"晚安白日梦\"的童话书哄着睡，屡试不爽。"
+        },
+        "爱情史官": {
+          "code": "HISTORY",
+          "cn": "爱情史官❤️",
+          "intro": "你是美帝爱情的见证者",
+          "desc": "你是美帝爱情的见证者，不断更新着她们的爱情编年史，是认认真真地想陪她们一起到八十岁。\n这么多年人来人往而你不变，或许有一天她们不再同框了你也不会走，不是不期待新的故事，只是旧的那些，已经够你喜欢很久很久了。"
+        },
+        "嗑学家·福尔摩斯·列文虎克": {
+          "code": "DETECTIVE",
+          "cn": "嗑学家·福尔摩斯·列文虎克🔍",
+          "intro": "你是karwin磕点放大镜",
+          "desc": "你是karwin磕点放大镜，你的评转区总是清一色的\"对\"。\n第一，绝对cp脑；\n第二，绝对不漏过任何一个磕点；\n第三，绝对盘得有理有据，领磕队长前来觐见！"
+        },
+        "蛀牙患者": {
+          "code": "SWEET",
+          "cn": "蛀牙患者🍬",
+          "intro": "对视笑了，好甜",
+          "desc": "对视笑了，好甜。坐一起了，好甜。聊上了，好甜。互cue了，好甜。肢体接触了！好甜！\n\"什么叫怎样都能磕到，你没有自己的妈妈妈咪吗，我的原生家庭就是这么幸福，不跟你说了补牙去了。\""
+        },
+        "宝宝": {
+          "code": "BABY",
+          "cn": "宝宝 👼",
+          "intro": "妈妈妈咪你们要离婚了吗",
+          "desc": "\"妈妈妈咪你们要离婚了吗你们不要我了吗ㅠㅠ\"\n家长一有不对劲的风吹草动（或者一动不动），你就方寸大乱，心里已替她们签完离婚协议书。这种情况一般不会持续太久，因为哄好你只需要等她们回家后一个抱抱。\n（紧急情况可找【保育员】 寻求1399ml 的奶瓶回血服务）"
+        },
+        "脑补大师": {
+          "code": "IMAGINE",
+          "cn": "脑补大师🤯",
+          "intro": "看到美帝互动脑中即浮现万字长文",
+          "desc": "看到美帝互动脑中即浮现万字长文。你的日常心理活动：这个表情？醋了。头发这么乱？亲了。火急火燎的那种。最近这么腻歪？做了。（这是可以说的吗？可以，因为你已经说完了。）\n经常写出脑洞小作文，但大多时候文笔不足以支撑你的想法，所以只是脑补完意淫完就满足了。"
+        },
+        "大胃王": {
+          "code": "EATER",
+          "cn": "大胃王🍚🍛🍜🍕🍔🍡🍰☕",
+          "intro": "你继承了金猪的口福",
+          "desc": "你继承了金猪的口福和吃老师对美食的真心，眼睛一睁就是吃。没糖磕了就看文，文看完了磕一下糖当点心，视频图文你全都要。永远在干饭，永远不内耗，打败你的唯一方法就是撑死你。祝大家都能好好吃饭。"
+        },
+        "大厨": {
+          "code": "CHEF",
+          "cn": "大厨🧑‍🍳",
+          "intro": "你是伟大的产粮老师",
+          "desc": "你是伟大的产粮老师，是同担的太太、厨子，可能还是妈妈主人。*如果你没有产出，不妨试一试。\n美帝种一棵树，你就让树上开满了……软迪巧  啊？\n美帝出现心动瞬间，你便让这种心动通过互联网传递到大家身上产生共振，这种共振产生的力量悠远而持久，足以传递回美帝身上，于是她们也开始纳闷：\"奇怪，今天心跳怎么这么吵？\""
+        },
+        "淡人": {
+          "code": "CALM",
+          "cn": "淡人🐨",
+          "intro": "你是美帝圈的小众姐",
+          "desc": "你是美帝圈的小众姐，大家狂欢时你只是笑笑不说话，大家哀嚎时你只是转身向大海走去，啊不对不对，是起身泡一杯枸杞。\n圈内的争执与你无关，甚至美帝也无法伤你分毫（刀枪不入这一块）。有糖就磕，没糖就专注现生（原来是现充）。但淡不代表不爱，你只是开了省电模式。"
+        }
+      };
+
+      const TYPE_IMAGES = {
+        "恨生米煮不成熟饭型": "image/1.jpg",
+        "按头型": "image/2.jpg",
+        "强制爱型": "image/3.jpg",
+        "妈妈": "image/4.jpg",
+        "保育员": "image/5.jpg",
+        "爱情史官": "image/6.jpg",
+        "嗑学家·福尔摩斯·列文虎克": "image/7.jpg",
+        "蛀牙患者": "image/8.png",
+        "宝宝": "image/9.jpg",
+        "脑补大师": "image/10.jpg",
+        "大胃王": "image/11.jpg",
+        "大厨": "image/12.jpg",
+        "淡人": "image/13.png"
+      };
+      const NORMAL_TYPES = Object.keys(TYPE_LIBRARY);
+
+      // 维度解释
+      const DIM_EXPLANATIONS = {
+        "K1": {
+          "L": "佛系养生，不急不躁，一切随缘。",
+          "M": "偶尔会急，但能自我调节。",
+          "H": "急性子，等不及，想马上看到结果。"
+        },
+        "K2": {
+          "L": "开放包容，尊重每个人的选择。",
+          "M": "有一点占有欲，但能控制。",
+          "H": "独占欲强，眼里容不得沙子。"
+        },
+        "K3": {
+          "L": "尊重个人边界，不过度干预。",
+          "M": "适度关心，在需要时提供帮助。",
+          "H": "保护欲爆棚，像老母鸡护崽。"
+        },
+        "K4": {
+          "L": "理性客观，保持距离。",
+          "M": "能共情，会适当安慰。",
+          "H": "治愈系，是同担的心灵港湾。"
+        },
+        "K5": {
+          "L": "灵活多变，随遇而安。",
+          "M": "有一定忠诚度，但不会过度投入。",
+          "H": "长情专一，从一而终。"
+        },
+        "K6": {
+          "L": "粗线条，不拘小节。",
+          "M": "观察力一般，偶尔会发现细节。",
+          "H": "火眼金睛，任何细节都逃不过你的眼睛。"
+        },
+        "K7": {
+          "L": "甜度感知一般，比较理性。",
+          "M": "能感受到甜，但不会过度。",
+          "H": "甜度感知超强，血糖爆表。"
+        },
+        "K8": {
+          "L": "喜欢消费内容，较少产出。",
+          "M": "偶尔产出，享受创作过程。",
+          "H": "高产似母猪，是产粮大户。"
+        },
+        "K9": {
+          "L": "情绪波动大，容易受影响。",
+          "M": "情绪稳定，能应对变化。",
+          "H": "泰山崩于前而色不变，非常淡定。"
+        }
+      };
+
+      const dimensionOrder = ['K1','K2','K3','K4','K5','K6','K7','K8','K9'];
+
+      // 应用状态
+      const app = {
+        shuffledQuestions: [],
+        answers: {},
+        previewMode: false
+      };
+
+      // 屏幕元素
+      const screens = {
+        intro: document.getElementById('intro'),
+        test: document.getElementById('test'),
+        result: document.getElementById('result')
+      };
+
+      const questionList = document.getElementById('questionList');
+      const progressBar = document.getElementById('progressBar');
+      const progressText = document.getElementById('progressText');
+      const submitBtn = document.getElementById('submitBtn');
+      const testHint = document.getElementById('testHint');
+
+      // 显示指定屏幕
+      function showScreen(name) {
+        Object.entries(screens).forEach(([key, el]) => {
+          el.classList.toggle('active', key === name);
+          el.classList.toggle('hidden', key !== name);
+        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      // 洗牌函数
+      function shuffle(array) {
+        const arr = [...array];
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+      }
+
+      // 获取可见问题
+      function getVisibleQuestions() {
+        return [...app.shuffledQuestions];
+      }
+
+      // 获取问题元数据标签
+      function getQuestionMetaLabel(q) {
+        return app.previewMode ? dimensionMeta[q.dim].name : '维度已隐藏';
+      }
+
+      // 渲染问题
+      function renderQuestions() {
+        const visibleQuestions = getVisibleQuestions();
+        questionList.innerHTML = '';
+        visibleQuestions.forEach((q, index) => {
+          const card = document.createElement('article');
+          card.className = 'question bg-white rounded-xl p-6 shadow';
+          card.innerHTML = `
+            <div class="question-meta flex justify-between items-center mb-4">
+              <div class="badge bg-theme-primary text-white text-xs px-2 py-1 rounded">第 ${index + 1} 题</div>
+              <div class="text-sm text-theme-text-light">${getQuestionMetaLabel(q)}</div>
+            </div>
+            <div class="question-title text-lg font-medium mb-4">${q.text}</div>
+            <div class="options space-y-2">
+              ${q.options.map((opt, i) => {
+                const code = ['A', 'B', 'C', 'D'][i] || String(i + 1);
+                const checked = app.answers[q.id] === opt.value ? 'checked' : '';
+                return `
+                  <label class="option flex items-center p-3 border rounded-lg hover:bg-theme-secondary cursor-pointer">
+                    <input type="radio" name="${q.id}" value="${opt.value}" ${checked} class="mr-3">
+                    <div class="option-code font-medium mr-2">${code}.</div>
+                    <div>${opt.label}</div>
+                  </label>
+                `;
+              }).join('')}
+            </div>
+          `;
+          questionList.appendChild(card);
+        });
+
+        // 绑定事件监听器
+        questionList.querySelectorAll('input[type="radio"]').forEach(input => {
+          input.addEventListener('change', (e) => {
+            const { name, value } = e.target;
+            app.answers[name] = Number(value);
+            updateProgress();
+          });
+        });
+
+        updateProgress();
+      }
+
+      // 更新进度
+      function updateProgress() {
+        const visibleQuestions = getVisibleQuestions();
+        const total = visibleQuestions.length;
+        const done = visibleQuestions.filter(q => app.answers[q.id] !== undefined).length;
+        const percent = total ? (done / total) * 100 : 0;
+        progressBar.style.width = `${percent}%`;
+        progressText.textContent = `${done} / ${total}`;
+        const complete = done === total && total > 0;
+        submitBtn.disabled = !complete;
+        testHint.textContent = complete
+          ? '都做完了。现在可以把你的电子魂魄交给结果页审判。'
+          : '全选完才会放行。世界已经够乱了，起码把题做完整。';
+      }
+
+      // 每种CP粉类型的维度特征预设
+      const typeDimensionProfiles = {
+        '恨生米煮不成熟饭型': { K1: 'H', K2: 'H', K3: 'L', K4: 'L', K5: 'M', K6: 'M', K7: 'H', K8: 'L', K9: 'L' },
+        '按头型': { K1: 'H', K2: 'H', K3: 'M', K4: 'M', K5: 'L', K6: 'L', K7: 'H', K8: 'L', K9: 'L' },
+        '强制爱型': { K1: 'M', K2: 'H', K3: 'H', K4: 'L', K5: 'H', K6: 'M', K7: 'H', K8: 'L', K9: 'M' },
+        '妈妈': { K1: 'M', K2: 'M', K3: 'H', K4: 'H', K5: 'H', K6: 'M', K7: 'M', K8: 'M', K9: 'M' },
+        '保育员': { K1: 'L', K2: 'L', K3: 'H', K4: 'H', K5: 'M', K6: 'M', K7: 'M', K8: 'L', K9: 'H' },
+        '爱情史官': { K1: 'L', K2: 'M', K3: 'M', K4: 'M', K5: 'H', K6: 'H', K7: 'H', K8: 'M', K9: 'M' },
+        '嗑学家·福尔摩斯·列文虎克': { K1: 'M', K2: 'M', K3: 'L', K4: 'L', K5: 'H', K6: 'H', K7: 'H', K8: 'H', K9: 'M' },
+        '蛀牙患者': { K1: 'M', K2: 'M', K3: 'L', K4: 'M', K5: 'M', K6: 'L', K7: 'H', K8: 'L', K9: 'L' },
+        '宝宝': { K1: 'M', K2: 'M', K3: 'M', K4: 'H', K5: 'M', K6: 'L', K7: 'H', K8: 'L', K9: 'L' },
+        '脑补大师': { K1: 'M', K2: 'M', K3: 'L', K4: 'L', K5: 'M', K6: 'H', K7: 'H', K8: 'H', K9: 'M' },
+        '大胃王': { K1: 'L', K2: 'L', K3: 'L', K4: 'M', K5: 'M', K6: 'L', K7: 'H', K8: 'M', K9: 'H' },
+        '大厨': { K1: 'L', K2: 'L', K3: 'M', K4: 'H', K5: 'M', K6: 'M', K7: 'H', K8: 'H', K9: 'M' },
+        '淡人': { K1: 'L', K2: 'L', K3: 'L', K4: 'M', K5: 'M', K6: 'M', K7: 'M', K8: 'L', K9: 'H' }
+      };
+
+      // 计算结果
+      function computeResult() {
+        // 统计每个维度的总分和题目数量
+        const dimScores = {};
+        const dimCounts = {};
+        Object.keys(dimensionMeta).forEach(dim => {
+          dimScores[dim] = 0;
+          dimCounts[dim] = 0;
+        });
+
+        // 遍历所有题目，累加用户回答的分数
+        questions.forEach(q => {
+          const answer = app.answers[q.id];
+          if (answer !== undefined) {
+            dimScores[q.dim] += Number(answer);
+            dimCounts[q.dim]++;
+          }
+        });
+
+        // 计算每个维度的平均分，并映射为L/M/H等级
+        const userLevels = {};
+        const levels = {};
+        Object.keys(dimensionMeta).forEach(dim => {
+          const avg = dimCounts[dim] > 0 ? dimScores[dim] / dimCounts[dim] : 2.5;
+          let level;
+          if (avg <= 1.5) level = 'L';
+          else if (avg <= 2.5) level = 'M';
+          else level = 'H';
+          userLevels[dim] = level;
+          levels[dim] = level;
+        });
+
+        // 将用户维度水平与每个类型比较，计算匹配度
+        let bestType = null;
+        let bestMatch = -1;
+        let bestMatchRate = 0;
+
+        Object.entries(typeDimensionProfiles).forEach(([typeName, profile]) => {
+          let matchCount = 0;
+          dimensionOrder.forEach(dim => {
+            if (userLevels[dim] === profile[dim]) {
+              matchCount++;
+            }
+          });
+          const matchRate = matchCount / 9;
+
+          if (matchRate > bestMatchRate) {
+            bestMatchRate = matchRate;
+            bestMatch = matchCount;
+            bestType = TYPE_LIBRARY[typeName];
+            bestType.name = typeName;
+          }
+        });
+
+        const similarity = Math.round(bestMatchRate * 100);
+        const badge = `维度匹配度 ${similarity}% · 一致维度 ${bestMatch}/9`;
+
+        return {
+          rawScores: dimScores,
+          levels: userLevels,
+          ranked: [bestType],
+          bestNormal: bestType,
+          finalType: bestType,
+          modeKicker: '你的CP粉类型',
+          badge: badge,
+          sub: '根据你的维度特征，这是最符合你的CP粉类型。',
+          special: false,
+          secondaryType: null
+        };
+      }
+
+      // 渲染维度列表
+      function renderDimList(result) {
+        const dimList = document.getElementById('dimList');
+        dimList.innerHTML = dimensionOrder.map(dim => {
+          const level = result.levels[dim];
+          const explanation = DIM_EXPLANATIONS[dim][level];
+          const levelText = level === 'H' ? '高' : level === 'L' ? '低' : '中';
+          return `
+            <div class="dim-item p-4 border rounded-lg">
+              <div class="dim-item-top flex justify-between items-center mb-2">
+                <div class="dim-item-name font-medium">${dimensionMeta[dim].name}</div>
+                <div class="dim-item-score text-sm text-theme-text-light">${levelText}</div>
+              </div>
+              <p class="text-sm text-theme-text-light">${explanation}</p>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // 渲染结果
+      function renderResult() {
+        const result = computeResult();
+        const type = result.finalType;
+
+        document.getElementById('resultModeKicker').textContent = result.modeKicker;
+        document.getElementById('resultTypeName').textContent = type.cn;
+        document.getElementById('matchBadge').textContent = result.badge;
+        document.getElementById('resultTypeSub').textContent = result.sub;
+        document.getElementById('resultDesc').textContent = type.desc;
+        document.getElementById('funNote').textContent = '本测试仅供娱乐，如有雷同，并非巧合。JMJ cross！';
+
+        // 显示对应的图片
+        const posterImage = document.getElementById('posterImage');
+        const imageUrl = TYPE_IMAGES[type.name];
+        if (imageUrl) {
+          let imageHtml = `<img src="${imageUrl}" class="w-48 h-48 md:w-64 md:h-64 object-cover rounded-full" alt="${type.cn}">`;
+          if (type.name === '大厨') {
+            imageHtml += `<div class="absolute bottom-1 right-1 text-xs text-white bg-black/50 px-1 rounded">@Rinbox-w</div>`;
+            posterImage.className = 'w-48 h-48 md:w-64 md:h-64 bg-theme-secondary rounded-full flex items-center justify-center relative overflow-hidden';
+          }
+          posterImage.innerHTML = imageHtml;
+        } else {
+          posterImage.innerHTML = '<span class="text-4xl">🎉</span>';
+        }
+
+        renderDimList(result);
+        showScreen('result');
+      }
+
+      // 开始测试
+      function startTest(preview = false) {
+        app.previewMode = preview;
+        app.answers = {};
+        app.shuffledQuestions = shuffle(questions);
+        renderQuestions();
+        showScreen('test');
+      }
+
+      // 确保DOM加载完成后执行
+      document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM加载完成');
+        
+        // 绑定事件监听器
+        document.getElementById('startBtn').addEventListener('click', function() {
+          console.log('开始测试按钮被点击');
+          startTest(false);
+        });
+        
+        document.getElementById('backIntroBtn').addEventListener('click', function() {
+          showScreen('intro');
+        });
+        
+        document.getElementById('submitBtn').addEventListener('click', function() {
+          renderResult();
+        });
+        
+        document.getElementById('restartBtn').addEventListener('click', function() {
+          startTest(false);
+        });
+        
+        document.getElementById('toTopBtn').addEventListener('click', function() {
+          showScreen('intro');
+        });
+        
+        console.log('事件监听器已绑定');
+      });
+    </script>
+  </body>
+</html>
