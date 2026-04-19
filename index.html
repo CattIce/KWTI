@@ -124,9 +124,6 @@
           <button id="toTopBtn" class="border border-theme-primary text-theme-primary px-6 py-2 rounded-full text-base font-medium hover:bg-theme-secondary transition-colors">
             返回首页
           </button>
-          <button id="previewAllBtn" class="border border-theme-primary text-theme-primary px-6 py-2 rounded-full text-base font-medium hover:bg-theme-secondary transition-colors">
-            预览全部结果
-          </button>
         </div>
       </section>
     </div>
@@ -766,74 +763,6 @@
         document.getElementById('toTopBtn').addEventListener('click', function() {
           showScreen('intro');
         });
-
-        
-        // 预览全部结果功能
-        let previewInterval = null;
-        let previewIndex = 0;
-        const allTypeNames = Object.keys(TYPE_LIBRARY);
-
-        document.getElementById('previewAllBtn').addEventListener('click', function() {
-          if (previewInterval) {
-            clearInterval(previewInterval);
-            previewInterval = null;
-            this.textContent = '预览全部结果';
-            showScreen('intro');
-            return;
-          }
-          previewIndex = 0;
-          this.textContent = '停止预览';
-          showScreen('result');
-          previewNextType();
-          previewInterval = setInterval(previewNextType, 3000);
-        });
-
-        function previewNextType() {
-          const typeName = allTypeNames[previewIndex];
-          const type = TYPE_LIBRARY[typeName];
-
-          document.getElementById('resultModeKicker').textContent = '预览模式';
-          document.getElementById('resultTypeName').textContent = type.cn;
-          document.getElementById('matchBadge').textContent = '维度匹配度 100% · 一致维度 9/9';
-          document.getElementById('resultTypeSub').textContent = '预览模式，随机展示';
-          document.getElementById('resultDesc').textContent = type.desc;
-          document.getElementById('funNote').textContent = '本测试仅供娱乐，如有雷同，并非巧合。JMJ cross！';
-
-          const posterImage = document.getElementById('posterImage');
-          const imageUrl = TYPE_IMAGES[typeName];
-          if (imageUrl) {
-            let imageHtml = `<img src="${imageUrl}" class="w-48 h-48 md:w-64 md:h-64 object-cover rounded-full" alt="${type.cn}">`;
-            if (typeName === '大厨') {
-              imageHtml += `<div class="absolute bottom-0 right-0 text-xs text-white bg-black/50 px-2 py-0.5 rounded-br-full rounded-tl-full">@Rinbox-w</div>`;
-              posterImage.className = 'w-48 h-48 md:w-64 md:h-64 bg-theme-secondary rounded-full flex items-center justify-center relative overflow-visible';
-            } else {
-              posterImage.className = 'w-48 h-48 md:w-64 md:h-64 bg-theme-secondary rounded-full flex items-center justify-center relative overflow-hidden';
-            }
-            posterImage.innerHTML = imageHtml;
-          } else {
-            posterImage.innerHTML = '<span class="text-4xl">🎉</span>';
-          }
-
-          // 渲染一个默认的维度分析
-          const dimList = document.getElementById('dimList');
-          dimList.innerHTML = dimensionOrder.map(dim => {
-            const profile = typeDimensionProfiles[typeName];
-            const level = profile[dim];
-            const explanation = DIM_EXPLANATIONS[dim][level];
-            const levelText = level === 'H' ? '高' : level === 'L' ? '低' : '中';
-            return `
-              <div class="dim-item p-4 border rounded-lg">
-                <div class="dim-item-top flex justify-between items-center mb-2">
-                  <div class="dim-item-name font-medium">${dimensionMeta[dim].name}</div>
-                  <div class="dim-item-score text-sm text-theme-text-light">${levelText}</div>
-                </div>
-                <p class="text-sm text-theme-text-light">${explanation}</p>
-              </div>
-            `;
-          }).join('');
-
-          previewIndex = (previewIndex + 1) % allTypeNames.length;
-        }//删除
         
         console.log('事件监听器已绑定');
       });
