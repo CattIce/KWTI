@@ -662,6 +662,8 @@
             matchRate *= 0.9; // 更降低出现概率（更极端）
           } else if (typeName === '按头型') {
             matchRate *= 1.1; // 提高出现概率
+          } else if (typeName === '大胃王') {
+            matchRate *= 1.1; // 提高出现概率
           }
 
           if (matchRate > bestMatchRate) {
