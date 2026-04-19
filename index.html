@@ -653,7 +653,12 @@
               matchCount++;
             }
           });
-          const matchRate = matchCount / 9;
+          let matchRate = matchCount / 9;
+          
+          // 降低大厨结果的出现率（惩罚因子）
+          if (typeName === '大厨') {
+            matchRate *= 0.8; // 大厨类型的匹配度乘以0.8，降低出现概率
+          }
 
           if (matchRate > bestMatchRate) {
             bestMatchRate = matchRate;
