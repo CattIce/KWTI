@@ -655,9 +655,13 @@
           });
           let matchRate = matchCount / 9;
           
-          // 降低大厨结果的出现率（惩罚因子）
+          // 调整各类型出现概率（惩罚/奖励因子）
           if (typeName === '大厨') {
-            matchRate *= 0.8; // 大厨类型的匹配度乘以0.8，降低出现概率
+            matchRate *= 0.8; // 降低出现概率
+          } else if (typeName === '强制爱型') {
+            matchRate *= 0.9; // 更降低出现概率（更极端）
+          } else if (typeName === '按头型') {
+            matchRate *= 1.1; // 提高出现概率
           }
 
           if (matchRate > bestMatchRate) {
